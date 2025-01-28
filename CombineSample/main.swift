@@ -20,6 +20,17 @@ import Combine
 //
 //publisher.value = "구독을 취소했어요~"
 
-//SubjectExample().callPassthrough()
-SubjectExample().callCurrentValue()
+//let pub = CustomPublisher(value: "value1")
+//let sub1 = CustomSubscriber()
+//
+//pub.subscribe(sub1)
+//pub.send("value2")
+//pub.send("value3")
 
+
+let weather = Weather(temperature: 20)
+let cancellable = weather.$temperature
+    .sink() {_ in 
+        print ("Temperature now: \(weather.temperature)")
+}
+weather.temperature = 25

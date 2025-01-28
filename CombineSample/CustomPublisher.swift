@@ -18,7 +18,7 @@ class CustomPublisher: Publisher {
         didSet{
             subscriptions.forEach{
                 $0.value = value
-                $0.request(.max(1))
+                $0.request(.none)
             }
         }
     }
@@ -38,6 +38,44 @@ class CustomPublisher: Publisher {
         let subscription = CustomSubscription(subscriber: customSubscriber, value: self.value)
         subscriptions.append(subscription)
         subscriber.receive(subscription: subscription)
+    }
+    
+    func send(_ input:String){
+        self.value = input
+    }
+    
+    // 구독자에게 값을 발행하는 Subscription 클래스
+    class CustomSubscription:Subscription{
+        
+        typealias T = String
+        
+        var subscriber:CustomSubscriber?
+        private var total_demand:Subscribers.Demand = .none
+        private var now_demand:Subscribers.Demand = .none
+        
+        var value:T
+        
+        init(subscriber: CustomSubscriber, value:T) {
+            self.subscriber = subscriber
+            self.value = value
+        }
+        
+        func request(_ demand: Subscribers.Demand) {
+            
+            total_demand += demand
+            
+            if total_demand <= now_demand{
+                subscriber?.receive(completion: .finished)
+                return
+            }
+            
+            _ = subscriber?.receive(value)
+            now_demand += 1
+        }
+        
+        func cancel() {
+            subscriber = nil
+        }
     }
 }
 
@@ -61,33 +99,10 @@ class CustomSubscriber: Subscriber, Cancellable {
     
     func receive(completion: Subscribers.Completion<Failure>) {
         print("Completion received.")
+        cancel()
     }
     
     func cancel() {
         subscription?.cancel()
-    }
-}
-
-// 구독자에게 값을 발행하는 Subscription 클래스
-class CustomSubscription:Subscription{
-    
-    typealias T = String
-    
-    private var subscriber:CustomSubscriber?
-    var value:T
-    
-    init(subscriber: CustomSubscriber, value:T) {
-        self.subscriber = subscriber
-        self.value = value
-    }
-    
-    func request(_ demand: Subscribers.Demand) {
-        _ = subscriber?.receive(value)
-    }
-    
-    func cancel() {
-        subscriber?.receive(completion: .finished)
-        subscriber = nil
-        
     }
 }
